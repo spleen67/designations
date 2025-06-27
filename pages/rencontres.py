@@ -11,16 +11,25 @@ st.title("Affectation automatique des arbitres aux rencontres")
 def charger_donnees():
     """Charge toutes les données nécessaires"""
     try:
-        # Chargement des rencontres
-        rencontres = charger_depuis_google_sheets(SHEETS_CONFIG["rencontres"])
+        # Chargement des rencontres (première feuille seulement)
+        rencontres = pd.read_excel(
+            f"https://docs.google.com/spreadsheets/d/{SHEETS_CONFIG['rencontres']}/export?format=xlsx",
+            sheet_name=0
+        )
         rencontres = nettoyer_colonnes(rencontres)
         
-        # Chargement des arbitres
-        arbitres = charger_depuis_google_sheets(SHEETS_CONFIG["arbitres"])
+        # Chargement des arbitres (première feuille seulement)
+        arbitres = pd.read_excel(
+            f"https://docs.google.com/spreadsheets/d/{SHEETS_CONFIG['arbitres']}/export?format=xlsx",
+            sheet_name=0
+        )
         arbitres = nettoyer_colonnes(arbitres)
         
-        # Chargement des disponibilités
-        dispo = charger_depuis_google_sheets(SHEETS_CONFIG["disponibilites"])
+        # Chargement des disponibilités (première feuille seulement)
+        dispo = pd.read_excel(
+            f"https://docs.google.com/spreadsheets/d/{SHEETS_CONFIG['disponibilites']}/export?format=xlsx",
+            sheet_name=0
+        )
         dispo = nettoyer_colonnes(dispo)
         
         # Nettoyage des disponibilités
