@@ -1,39 +1,22 @@
 import streamlit as st
 import pandas as pd
-import unicodedata
+from utils import get_disponibilites, get_arbitres
 
+# Configuration de la page
 st.set_page_config(page_title="Disponibilités des arbitres", layout="wide")
 st.title("Tableau de bord des disponibilités des arbitres")
 
-# Fonction de nettoyage des noms de colonnes
-def nettoyer_colonnes(df):
-    df.columns = [
-        unicodedata.normalize('NFKD', col).encode('ascii', errors='ignore').decode('utf-8').strip().upper()
-        for col in df.columns
-    ]
-    return df
+# Chargement des données via les fonctions utilitaires
+df_dispo_raw = get_disponibilites()
+df_arbitres_raw = get_arbitres()
 
-# Chargement des données depuis Google Sheets
-@st.cache_data
-def charger_disponibilites():
-    url = "https://docs.google.com/spreadsheets/d/113KAFUl9E4ceFqm-gIfQ-zhigYGnOGPh/export?format=xlsx"
-    df = pd.read_excel(url)
-    df = nettoyer_colonnes(df)
-    df['DATE'] = pd.to_datetime(df['DATE'], errors='coerce').dt.date
-    df['DISPONIBILITE'] = df['DISPONIBILITE'].astype(str).str.strip().str.upper()
-    df['DISPONIBILITE'] = df['DISPONIBILITE'].apply(lambda x: "✅" if x == "OUI" else "☑️")
-    return df
+# Préparation des données pour l'affichage et la fusion
+# On garde uniquement les colonnes utiles des arbitres pour la fusion
+df_arbitres = df_arbitres_raw[['NUMERO AFFILIATION', 'CATEGORIE', 'CODE CLUB']].copy()
 
-@st.cache_data
-def charger_arbitres():
-    url = "https://docs.google.com/spreadsheets/d/1UUZBFPMCkVGzVKeTP_D44ZpGwTHlu0Q0/export?format=xlsx"
-    df = pd.read_excel(url)
-    df = nettoyer_colonnes(df)
-    return df[['NUMERO AFFILIATION', 'CATEGORIE', 'CODE CLUB']]
-
-# Chargement des données
-df_dispo = charger_disponibilites()
-df_arbitres = charger_arbitres()
+# On transforme la disponibilité en icônes pour l'affichage
+df_dispo = df_dispo_raw.copy()
+df_dispo['DISPONIBILITE'] = df_dispo['DISPONIBILITE'].apply(lambda x: "✅" if x == "OUI" else "☑️")
 
 # Fusion des données
 if 'NO LICENCE' in df_dispo.columns:
@@ -43,7 +26,8 @@ else:
     st.stop()
 
 # Vérification des colonnes nécessaires
-colonnes_requises = ['NOM', 'PRENOM', 'CATEGORIE_y', 'CODE CLUB', 'DATE', 'DISPONIBILITE']
+# Note: 'CATEGORIE_y' devient 'CATEGORIE' car on a évité la collision de colonnes
+colonnes_requises = ['NOM', 'PRENOM', 'CATEGORIE', 'CODE CLUB', 'DATE', 'DISPONIBILITE']
 colonnes_manquantes = [col for col in colonnes_requises if col not in df.columns]
 
 if colonnes_manquantes:
@@ -53,7 +37,7 @@ if colonnes_manquantes:
 
 # Création du tableau pivoté
 pivot = df.pivot_table(
-    index=['NOM', 'PRENOM', 'CATEGORIE_y', 'CODE CLUB'],
+    index=['NOM', 'PRENOM', 'CATEGORIE', 'CODE CLUB'],
     columns='DATE',
     values='DISPONIBILITE',
     aggfunc='first',
