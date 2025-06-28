@@ -1,5 +1,11 @@
 import streamlit as st
 import pandas as pd
+import sys
+import os
+
+# Ajout de la racine du projet au sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from utils import get_disponibilites, get_arbitres
 
 # Configuration de la page
